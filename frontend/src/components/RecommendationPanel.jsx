@@ -45,13 +45,12 @@ function RecommendationPanel({ recommendations, loading, locationLoading, curren
               </p>
 
               <a
-                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.restaurant + (item.address && item.address !== "Gần vị trí của bạn" ? " " + item.address : ""))}`}
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.restaurant + ", " + item.address)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="mt-1 flex items-center gap-1 text-xs text-stone-400 underline-offset-2 hover:text-amber-600 hover:underline"
               >
-                <span>📍</span>
-                {item.address && item.address !== "Gần vị trí của bạn" ? item.address : "Xem trên Google Maps"}
+                <span>📍</span> {item.address || "Xem trên Google Maps"}
               </a>
 
               <div className="mt-1 flex items-center gap-3">
