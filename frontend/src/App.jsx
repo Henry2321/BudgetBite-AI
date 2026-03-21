@@ -71,7 +71,7 @@ function App() {
     setRecommendLoading(true);
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/restaurants`, {
+      const response = await axios.post(`${API_BASE_URL}/api/recommend`, {
         budget: numericBudget,
         currency,
         query,
