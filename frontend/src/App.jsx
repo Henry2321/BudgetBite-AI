@@ -1,30 +1,70 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 
 import BudgetControls from "./components/BudgetControls";
+import LanguageToggle from "./components/LanguageToggle";
 import RecommendationPanel from "./components/RecommendationPanel";
 import { USD_TO_VND_RATE, formatCurrency } from "./utils/currency";
+import { translations } from "./utils/translations";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
+function getInitialLanguage() {
+  if (typeof window === "undefined") {
+    return "en";
+  }
+
+  const savedLanguage = window.localStorage.getItem("budgetbite-language");
+
+  if (savedLanguage === "vi" || savedLanguage === "en") {
+    return savedLanguage;
+  }
+
+  return window.navigator.language.toLowerCase().startsWith("vi") ? "vi" : "en";
+}
+
 function App() {
+  const [language, setLanguage] = useState(getInitialLanguage);
   const [budget, setBudget] = useState("");
   const [currency, setCurrency] = useState("VND");
   const [query, setQuery] = useState("");
+  const [mealTime, setMealTime] = useState("");
+  const [people, setPeople] = useState(1);
   const [recommendations, setRecommendations] = useState([]);
   const [recommendationSource, setRecommendationSource] = useState(null);
   const [recommendationModel, setRecommendationModel] = useState(null);
   const [recommendLoading, setRecommendLoading] = useState(false);
   const [locationLoading, setLocationLoading] = useState(false);
+  const [userLocation, setUserLocation] = useState(null);
   const [error, setError] = useState("");
 
+  const copy = translations[language];
   const hasBudgetValue =
     budget && !Number.isNaN(Number(budget)) && Number(budget) > 0;
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("budgetbite-language", language);
+    }
+
+    document.documentElement.lang = language;
+  }, [language]);
 
   const handleCurrencyChange = (nextCurrency) => {
     setCurrency(nextCurrency);
     setBudget("");
     setQuery("");
+    setMealTime("");
+    setPeople(1);
+    setRecommendations([]);
+    setRecommendationSource(null);
+    setRecommendationModel(null);
+    setUserLocation(null);
+    setError("");
+  };
+
+  const handleLanguageToggle = () => {
+    setLanguage((currentLanguage) => (currentLanguage === "en" ? "vi" : "en"));
     setRecommendations([]);
     setRecommendationSource(null);
     setRecommendationModel(null);
@@ -34,16 +74,17 @@ function App() {
   const getLocation = () =>
     new Promise((resolve, reject) => {
       if (!navigator.geolocation) {
-        reject(new Error("Trình duyệt không hỗ trợ GPS."));
+        reject(new Error(copy.gpsUnsupported));
         return;
       }
+
       navigator.geolocation.getCurrentPosition(
-        (pos) =>
-          resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-        () =>
-          reject(
-            new Error("Không lấy được vị trí. Vui lòng cho phép truy cập GPS."),
-          ),
+        (position) =>
+          resolve({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          }),
+        () => reject(new Error(copy.gpsDenied))
       );
     });
 
@@ -51,7 +92,7 @@ function App() {
     const numericBudget = Number(budget);
 
     if (!budget || Number.isNaN(numericBudget) || numericBudget <= 0) {
-      setError("Please enter a valid budget greater than 0.");
+      setError(copy.invalidBudget);
       return;
     }
 
@@ -59,8 +100,10 @@ function App() {
     setLocationLoading(true);
 
     let location;
+
     try {
       location = await getLocation();
+      setUserLocation(location);
     } catch (gpsError) {
       setError(gpsError.message);
       setLocationLoading(false);
@@ -74,7 +117,10 @@ function App() {
       const response = await axios.post(`${API_BASE_URL}/api/recommend`, {
         budget: numericBudget,
         currency,
+        language,
         query,
+        mealTime,
+        people: Number(people) || 1,
         lat: location.lat,
         lng: location.lng,
       });
@@ -84,8 +130,7 @@ function App() {
       setRecommendationModel(response.data.model || null);
     } catch (fetchError) {
       setError(
-        fetchError.response?.data?.message ||
-          "Unable to generate recommendations right now.",
+        fetchError.response?.data?.message || copy.recommendationError
       );
     } finally {
       setRecommendLoading(false);
@@ -98,17 +143,23 @@ function App() {
         <section className="overflow-hidden rounded-[2rem] border border-white/10 bg-white/90 shadow-soft backdrop-blur">
           <div className="grid gap-8 p-5 sm:p-8 lg:grid-cols-[1.15fr_0.85fr] lg:gap-10 lg:p-10">
             <div className="space-y-6">
-              <span className="inline-flex w-fit rounded-full bg-amber-100 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-amber-900 sm:text-sm">
-                Budget-friendly food finder
-              </span>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <span className="inline-flex w-fit rounded-full bg-amber-100 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-amber-900 sm:text-sm">
+                  {copy.badge}
+                </span>
+                <LanguageToggle
+                  language={language}
+                  onToggle={handleLanguageToggle}
+                  label={copy.switchLanguageLabel}
+                />
+              </div>
 
               <div className="space-y-4">
                 <h1 className="max-w-2xl text-3xl font-extrabold tracking-tight text-stone-900 sm:text-5xl">
-                  BudgetBite AI helps you eat well without overspending.
+                  {copy.heroTitle}
                 </h1>
                 <p className="max-w-2xl text-sm leading-7 text-stone-600 sm:text-lg">
-                  Enter your budget, describe what you're craving, and let AI
-                  find real nearby restaurants that fit.
+                  {copy.heroDescription}
                 </p>
               </div>
 
@@ -119,9 +170,15 @@ function App() {
                 setCurrency={handleCurrencyChange}
                 query={query}
                 setQuery={setQuery}
+                mealTime={mealTime}
+                setMealTime={setMealTime}
+                people={people}
+                setPeople={setPeople}
                 onRecommend={handleRecommend}
                 recommendLoading={recommendLoading || locationLoading}
                 locationLoading={locationLoading}
+                language={language}
+                copy={copy}
               />
 
               {error ? (
@@ -134,17 +191,17 @@ function App() {
             <div className="rounded-[1.75rem] bg-stone-900 p-5 text-white shadow-soft sm:p-6">
               <div className="space-y-5">
                 <p className="text-sm uppercase tracking-[0.3em] text-amber-300">
-                  Quick Snapshot
+                  {copy.quickSnapshot}
                 </p>
 
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
                   <div className="rounded-2xl border border-white/10 bg-white/10 p-4 transition hover:bg-white/15">
-                    <p className="text-sm text-stone-300">Currency</p>
+                    <p className="text-sm text-stone-300">{copy.currencyLabel}</p>
                     <p className="mt-2 text-2xl font-bold">{currency}</p>
                   </div>
 
                   <div className="rounded-2xl border border-white/10 bg-white/10 p-4 transition hover:bg-white/15">
-                    <p className="text-sm text-stone-300">Budget Entered</p>
+                    <p className="text-sm text-stone-300">{copy.budgetEntered}</p>
                     <p className="mt-2 text-2xl font-bold">
                       {hasBudgetValue
                         ? formatCurrency(Number(budget), currency)
@@ -153,19 +210,19 @@ function App() {
                   </div>
 
                   <div className="rounded-2xl border border-white/10 bg-white/10 p-4 transition hover:bg-white/15">
-                    <p className="text-sm text-stone-300">Suggestions Found</p>
+                    <p className="text-sm text-stone-300">{copy.suggestionsFound}</p>
                     <p className="mt-2 text-2xl font-bold">
                       {recommendations.length}
                     </p>
                   </div>
 
                   <div className="rounded-2xl border border-white/10 bg-white/10 p-4 transition hover:bg-white/15">
-                    <p className="text-sm text-stone-300">AI Source</p>
+                    <p className="text-sm text-stone-300">{copy.aiSource}</p>
                     <p className="mt-2 text-lg font-bold">
                       {recommendationSource === "openai"
                         ? recommendationModel || "OpenAI"
                         : recommendationSource === "fallback"
-                          ? "Demo fallback"
+                          ? copy.demoFallback
                           : "--"}
                     </p>
                   </div>
@@ -173,22 +230,18 @@ function App() {
 
                 <div className="space-y-3">
                   <p className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm leading-6 text-stone-200">
-                    Tip: enter your budget, describe what you want, then click{" "}
-                    <span className="font-semibold">Recommend for me</span>. GPS
-                    will be used to find real nearby restaurants.
+                    {copy.tip}
                   </p>
 
                   <p className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm leading-6 text-stone-200">
-                    Demo exchange rate:{" "}
-                    <span className="font-semibold">
-                      1 USD = {USD_TO_VND_RATE.toLocaleString("en-US")} VND
-                    </span>
+                    {copy.exchangeRate(
+                      USD_TO_VND_RATE.toLocaleString("en-US")
+                    )}
                   </p>
 
                   {recommendationSource === "fallback" ? (
                     <p className="rounded-2xl border border-amber-300/20 bg-amber-300/10 p-4 text-sm leading-6 text-amber-100">
-                      OPENAI_API_KEY is missing or the API request failed,
-                      showing fallback recommendations.
+                      {copy.fallbackNotice}
                     </p>
                   ) : null}
                 </div>
@@ -204,6 +257,10 @@ function App() {
           currency={currency}
           source={recommendationSource}
           model={recommendationModel}
+          userLat={userLocation?.lat}
+          userLng={userLocation?.lng}
+          language={language}
+          copy={copy}
         />
       </div>
     </div>

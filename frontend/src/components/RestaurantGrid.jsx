@@ -7,21 +7,22 @@ function RestaurantGrid({
   hasSearched,
   recommendedRestaurants,
   currency,
+  copy,
 }) {
   return (
     <section className="space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.3em] text-amber-300">
-            Restaurants
+            {copy.restaurantsLabel}
           </p>
           <h2 className="mt-2 text-3xl font-bold text-white">
-            Food spots that fit your budget
+            {copy.restaurantsTitle}
           </h2>
         </div>
         {recommendedRestaurants.length > 0 ? (
           <span className="inline-flex w-fit rounded-full border border-amber-300/25 bg-amber-300/10 px-4 py-2 text-sm font-semibold text-amber-100">
-            Highlighted picks match your recommendations
+            {copy.highlightedPicks}
           </span>
         ) : null}
       </div>
@@ -29,7 +30,7 @@ function RestaurantGrid({
       {loading ? (
         <div className="flex items-center justify-center gap-3 rounded-[1.75rem] border border-white/10 bg-white/10 p-6 text-center text-white backdrop-blur">
           <LoadingSpinner />
-          <span>Loading restaurant matches...</span>
+          <span>{copy.loadingRestaurants}</span>
         </div>
       ) : null}
 
@@ -41,6 +42,7 @@ function RestaurantGrid({
               restaurant={restaurant}
               isRecommended={recommendedRestaurants.includes(restaurant.name)}
               currency={currency}
+              copy={copy}
             />
           ))}
         </div>
@@ -49,8 +51,8 @@ function RestaurantGrid({
       {!loading && restaurants.length === 0 ? (
         <div className="rounded-[1.75rem] border border-dashed border-white/20 bg-white/5 p-6 text-center text-stone-200">
           {hasSearched
-            ? "No restaurants matched this budget. Try increasing the amount."
-            : "Enter a budget to start exploring affordable restaurants."}
+            ? copy.noRestaurantsFound
+            : copy.enterBudgetPrompt}
         </div>
       ) : null}
     </section>
