@@ -2,24 +2,37 @@
 
 Simple Express + Mongoose backend plus a React + Tailwind frontend for a hackathon project.
 
+## Structure
+
+```bash
+BudgetBite AI/
+  backend/   # Express + Mongoose + OpenAI API
+  frontend/  # React + Tailwind + Axios
+```
+
 ## Files
 
-- `server.js`
-- `models/Restaurant.js`
-- `routes/restaurantRoutes.js`
-- `routes/recommendRoutes.js`
-- `seed.js`
-- `data/restaurants.js`
-- `client/src/App.jsx`
-- `client/src/components/*`
+- `backend/server.js`
+- `backend/models/Restaurant.js`
+- `backend/routes/restaurantRoutes.js`
+- `backend/routes/recommendRoutes.js`
+- `backend/services/recommendationService.js`
+- `backend/seed.js`
+- `backend/data/restaurants.js`
+- `backend/.env.example`
+- `frontend/src/App.jsx`
+- `frontend/src/components/*`
 
 ## Backend Run
 
 1. Install dependencies:
 
 ```bash
+cd backend
 npm install
 ```
+
+Create a local `.env` file from `.env.example` if you want to use OpenAI-powered recommendations.
 
 2. Start MongoDB locally.
 
@@ -33,6 +46,13 @@ You can also override it with:
 
 ```bash
 MONGODB_URI=<your_mongodb_uri>
+```
+
+OpenAI integration uses:
+
+```bash
+OPENAI_API_KEY=<your_openai_api_key>
+OPENAI_MODEL=gpt-5-mini
 ```
 
 3. Seed sample data:
@@ -55,10 +75,10 @@ http://localhost:5000
 
 ## Frontend Run
 
-1. Open the client app:
+1. Open the frontend app:
 
 ```bash
-cd client
+cd frontend
 ```
 
 2. Install frontend dependencies:
@@ -108,6 +128,9 @@ Request body:
 ```
 
 Returns 3 simulated meal suggestions with simple explanations.
+
+When `OPENAI_API_KEY` is set, this endpoint will call OpenAI through the Responses API.
+If the key is missing or the request fails, it falls back to the built-in deterministic recommendation logic so the demo still works.
 
 Request body can also include:
 

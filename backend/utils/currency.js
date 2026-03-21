@@ -1,3 +1,4 @@
+require("dotenv").config();
 const USD_TO_VND_RATE = 25000;
 const DEFAULT_CURRENCY = "USD";
 const SUPPORTED_CURRENCIES = ["USD", "VND"];
