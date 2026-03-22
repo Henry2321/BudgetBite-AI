@@ -2,7 +2,7 @@ export const translations = {
   en: {
     badge: "Budget-friendly food finder",
     switchLanguageLabel: "Tiếng Việt",
-    heroTitle: "BudgetBite AI helps you eat well without overspending.",
+    heroTitle: "MealMatch helps you eat well without overspending.",
     heroDescription:
       "Enter your budget, describe what you're craving, and let AI recommend the right meal and nearby places.",
     invalidBudget: "Please enter a valid budget greater than 0.",
@@ -73,7 +73,7 @@ export const translations = {
   vi: {
     badge: "Gợi ý món ăn theo ngân sách",
     switchLanguageLabel: "English",
-    heroTitle: "BudgetBite AI giúp bạn ăn ngon mà không quá tay.",
+    heroTitle: "MealMatch giúp bạn ăn ngon mà không quá tay.",
     heroDescription:
       "Nhập ngân sách, mô tả món bạn đang thèm và để AI gợi ý bữa ăn phù hợp cùng các quán gần bạn.",
     invalidBudget: "Vui lòng nhập ngân sách hợp lệ lớn hơn 0.",
