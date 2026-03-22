@@ -11,10 +11,12 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const MONGODB_URI =
   process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/budgetbite_ai";
+const MONGODB_RETRY_DELAY_MS = 5000;
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || "")
   .split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
+let mongoStatus = "connecting";
 
 const corsOptions =
   ALLOWED_ORIGINS.length > 0
@@ -42,21 +44,44 @@ app.get("/health", (req, res) => {
   res.json({
     ok: true,
     service: "budgetbite-ai-backend",
+    database: mongoStatus,
   });
 });
 
 app.use("/api/restaurants", restaurantRoutes);
 app.use("/api/recommend", recommendRoutes);
 
-mongoose
-  .connect(MONGODB_URI)
-  .then(() => {
-    console.log("MongoDB connected");
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-    });
-  })
-  .catch((error) => {
-    console.error("MongoDB connection error:", error.message);
-    process.exit(1);
-  });
+mongoose.connection.on("connected", () => {
+  mongoStatus = "connected";
+  console.log("MongoDB connected");
+});
+
+mongoose.connection.on("disconnected", () => {
+  mongoStatus = "disconnected";
+  console.warn("MongoDB disconnected");
+});
+
+mongoose.connection.on("error", (error) => {
+  mongoStatus = "error";
+  console.error("MongoDB connection error:", error.message);
+});
+
+async function connectToDatabase() {
+  try {
+    mongoStatus = "connecting";
+    await mongoose.connect(MONGODB_URI);
+  } catch (error) {
+    mongoStatus = "error";
+    console.error("MongoDB initial connection failed:", error.message);
+
+    setTimeout(() => {
+      console.log("Retrying MongoDB connection...");
+      connectToDatabase();
+    }, MONGODB_RETRY_DELAY_MS);
+  }
+}
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+  connectToDatabase();
+});
