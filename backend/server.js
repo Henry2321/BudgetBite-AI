@@ -11,13 +11,37 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const MONGODB_URI =
   process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/budgetbite_ai";
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
-app.use(cors());
+const corsOptions =
+  ALLOWED_ORIGINS.length > 0
+    ? {
+        origin(origin, callback) {
+          if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+            return callback(null, true);
+          }
+
+          return callback(new Error("Origin not allowed by CORS"));
+        },
+      }
+    : undefined;
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 app.get("/", (req, res) => {
   res.json({
     message: "BudgetBite AI backend is running",
+  });
+});
+
+app.get("/health", (req, res) => {
+  res.json({
+    ok: true,
+    service: "budgetbite-ai-backend",
   });
 });
 

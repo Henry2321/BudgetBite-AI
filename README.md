@@ -105,6 +105,49 @@ Optional API override:
 VITE_API_URL=http://localhost:5000
 ```
 
+## Vercel Deploy
+
+This repository is a monorepo-like structure with:
+
+```bash
+backend/
+frontend/
+```
+
+The root [vercel.json](C:/Users/NGUYEN%20MINH%20TRI/OneDrive/Desktop/BudgetBite%20AI/vercel.json) is configured to deploy the `frontend/` app on Vercel.
+
+Important:
+
+- Set `VITE_API_URL` in Vercel to your deployed backend URL
+- Deploy the Express backend separately on a Node-friendly host such as Render, Railway, or similar
+
+## Railway Deploy
+
+Deploy the backend service from the `backend/` directory.
+
+Recommended Railway settings:
+
+- Service `Root Directory`: `/backend`
+- Start command: `npm start`
+- Healthcheck path: `/health`
+
+The repo includes [backend/railway.json](C:/Users/NGUYEN%20MINH%20TRI/OneDrive/Desktop/BudgetBite%20AI/backend/railway.json) so Railway can pick up the start command and healthcheck automatically once the backend service is pointed at `/backend`.
+
+Required Railway variables:
+
+```bash
+MONGODB_URI=<your_mongodb_connection_string>
+OPENAI_API_KEY=<your_openai_api_key>
+OPENAI_MODEL=gpt-5-mini
+ALLOWED_ORIGINS=https://your-frontend-domain.vercel.app,http://localhost:5173
+```
+
+Notes:
+
+- `PORT` is provided automatically by Railway
+- If you use MongoDB Atlas or another hosted MongoDB, paste that connection string into `MONGODB_URI`
+- After Railway generates a public domain, copy that URL into Vercel as `VITE_API_URL`
+
 ## Endpoints
 
 ### GET `/api/restaurants?budget=50`
